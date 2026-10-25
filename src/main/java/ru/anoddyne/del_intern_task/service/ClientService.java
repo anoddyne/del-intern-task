@@ -34,9 +34,15 @@ public class ClientService {
     }
 
     @Transactional
-    public void update(Long id, ClientRequestDto updateDto) {
+    public ClientResponseDto update(Long id, ClientRequestDto updateDto) {
         ClientAccount account = getClientOrThrow(id);
         clientMapper.updateEntity(updateDto, account);
+
+        // flush ДО маппинга: @UpdateTimestamp генерирует значение только при flush
+        // без этого DTO унесёт в ответ старый modifyDttm - UPDATE выполнится при коммите, позже маппинга
+        clientAccountRepository.saveAndFlush(account);
+
+        return clientMapper.toResponseDto(account);
     }
 
     @Transactional(readOnly = true)
